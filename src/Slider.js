@@ -318,7 +318,7 @@ var Slider = React.createClass({
     return false;
   },
 
-  _handlePanResponderGrant: function(/*e: Object, gestureState: Object*/) {
+  _handlePanResponderGrant: function(e: Object, gestureState: Object) {
     if(!this._thumbHitTest(e) && this.props.tapDirectChange){
       this._setCurrentValue(this._getValue(gestureState, e.nativeEvent.locationX - this.state.thumbSize.width));
       this._fireChangeEvent('onValueChange');

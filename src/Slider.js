@@ -162,6 +162,11 @@ var Slider = React.createClass({
     * Used to configure the animation parameters.  These are the same parameters in the Animated library.
     */
     animationConfig : PropTypes.object,
+
+    /**
+    * Used enable/disable ditect change of slider value to the tapped position
+    */
+    tapDirectChange: PropTypes.bool
   },
   getInitialState() {
     return {
@@ -305,7 +310,7 @@ var Slider = React.createClass({
 
   _handleStartShouldSetPanResponder: function(e: Object, /*gestureState: Object*/): boolean {
     // Should we become active when the user presses down on the thumb?
-    return this._thumbHitTest(e);
+    return true; // this._thumbHitTest(e);
   },
 
   _handleMoveShouldSetPanResponder: function(/*e: Object, gestureState: Object*/): boolean {
@@ -314,6 +319,11 @@ var Slider = React.createClass({
   },
 
   _handlePanResponderGrant: function(/*e: Object, gestureState: Object*/) {
+    if(!this._thumbHitTest(e) && this.props.tapDirectChange){
+      this._setCurrentValue(this._getValue(gestureState, e.nativeEvent.locationX - this.state.thumbSize.width));
+      this._fireChangeEvent('onValueChange');
+    }    
+    
     this._previousLeft = this._getThumbLeft(this._getCurrentValue());
     this._fireChangeEvent('onSlidingStart');
   },
@@ -380,9 +390,9 @@ var Slider = React.createClass({
     return ratio * (this.state.containerSize.width - this.state.thumbSize.width);
   },
 
-  _getValue(gestureState: Object) {
+  _getValue(gestureState: Object, offset: number) {
     var length = this.state.containerSize.width - this.state.thumbSize.width;
-    var thumbLeft = this._previousLeft + gestureState.dx;
+    var thumbLeft = gestureState.dx != 0 ? this._previousLeft + gestureState.dx : offset;
 
     var ratio = thumbLeft / length;
 

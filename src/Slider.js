@@ -188,7 +188,8 @@ var Slider = React.createClass({
       thumbTintColor: '#343434',
       thumbTouchSize: {width: 40, height: 40},
       debugTouchArea: false,
-      animationType: 'timing'
+      animationType: 'timing',
+      tapDirectChange: false,
     };
   },
   componentWillMount() {
@@ -310,7 +311,7 @@ var Slider = React.createClass({
 
   _handleStartShouldSetPanResponder: function(e: Object, /*gestureState: Object*/): boolean {
     // Should we become active when the user presses down on the thumb?
-    return true; // this._thumbHitTest(e);
+    return this.props.tapDirectChange ? true : this._thumbHitTest(e);
   },
 
   _handleMoveShouldSetPanResponder: function(/*e: Object, gestureState: Object*/): boolean {
@@ -344,7 +345,10 @@ var Slider = React.createClass({
       return;
     }
 
-    this._setCurrentValue(this._getValue(gestureState));
+    if(!this.tapDirectChange && gestureState.dx != 0){
+        this._setCurrentValue(this._getValue(gestureState));
+    }
+
     this._fireChangeEvent('onSlidingComplete');
   },
 

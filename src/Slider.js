@@ -190,6 +190,8 @@ var Slider = React.createClass({
       debugTouchArea: false,
       animationType: 'timing',
       tapDirectChange: false,
+      firstTouchOnThumb: false,
+      changed: false
     };
   },
   componentWillMount() {
@@ -320,21 +322,24 @@ var Slider = React.createClass({
   },
 
   _handlePanResponderGrant: function(e: Object, gestureState: Object) {
-    if(this.props.tapDirectChange && !this._thumbHitTest(e)){
-      this._setCurrentValue(this._getValue(gestureState, e.nativeEvent.locationX - (this.props.thumbTouchSize.width / 2)));
+
+    this.setState({firstTouchOnThumb: this._thumbHitTest(e)})
+      this._previousLeft = this._getThumbLeft(this._getCurrentValue());
       this._fireChangeEvent('onSlidingStart');
-      this._fireChangeEvent('onValueChange');
-    }    
-    
-    this._previousLeft = this._getThumbLeft(this._getCurrentValue());
-    this._fireChangeEvent('onSlidingStart');
   },
   _handlePanResponderMove: function(e: Object, gestureState: Object) {
     if (this.props.disabled) {
       return;
     }
+    
+    if(this.state.firstTouchOnThumb){
+      this._setCurrentValue(this._getValue(gestureState));   
+    }   
+    else if(!this.state.firstTouchOnThum && !this.state.changed) {
+      this.setState({changed: true})
+      this._setCurrentValue(this._getValue(gestureState, e.nativeEvent.locationX - (this.props.thumbTouchSize.width / 2)));
+    }
 
-    this._setCurrentValue(this._getValue(gestureState));
     this._fireChangeEvent('onValueChange');
   },
   _handlePanResponderRequestEnd: function(e: Object, gestureState: Object) {
@@ -346,9 +351,9 @@ var Slider = React.createClass({
       return;
     }
 
-    if(!this.tapDirectChange && gestureState.dx != 0){
-        this._setCurrentValue(this._getValue(gestureState));
-    }
+    this._setCurrentValue(this._getValue(gestureState));
+
+    this.setState({firstTouchOnThumb: false, changed: false})
 
     this._fireChangeEvent('onSlidingComplete');
   },
@@ -397,7 +402,7 @@ var Slider = React.createClass({
 
   _getValue(gestureState: Object, offset: number) {
     var length = this.state.containerSize.width - this.state.thumbSize.width;
-    var thumbLeft = gestureState.dx != 0 ? this._previousLeft + gestureState.dx : offset;
+    var thumbLeft = gestureState.dx != 0 || !offset ? this._previousLeft + gestureState.dx : offset;
 
     var ratio = thumbLeft / length;
 

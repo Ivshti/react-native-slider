@@ -321,7 +321,7 @@ var Slider = React.createClass({
 
   _handlePanResponderGrant: function(e: Object, gestureState: Object) {
     if(!this._thumbHitTest(e) && this.props.tapDirectChange){
-      this._setCurrentValue(this._getValue(gestureState, e.nativeEvent.locationX - this.state.thumbSize.width));
+      this._setCurrentValue(this._getValue(gestureState, e.nativeEvent.locationX - (this.props.thumbTouchSize.width / 2)));
       this._fireChangeEvent('onValueChange');
     }    
     
@@ -395,7 +395,7 @@ var Slider = React.createClass({
   },
 
   _getValue(gestureState: Object, offset: number) {
-    var length = this.state.containerSize.width - (this.props.thumbTouchSize.width / 2);
+    var length = this.state.containerSize.width - offset;
     var thumbLeft = gestureState.dx != 0 ? this._previousLeft + gestureState.dx : offset;
 
     var ratio = thumbLeft / length;

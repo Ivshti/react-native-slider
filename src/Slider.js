@@ -191,7 +191,8 @@ var Slider = React.createClass({
       animationType: 'timing',
       tapDirectChange: false,
       firstTouchOnThumb: false,
-      changed: false
+      changed: false,
+      firstTouchX: null
     };
   },
   componentWillMount() {
@@ -323,9 +324,9 @@ var Slider = React.createClass({
 
   _handlePanResponderGrant: function(e: Object, gestureState: Object) {
 
-    this.setState({firstTouchOnThumb: this._thumbHitTest(e)})
-      this._previousLeft = this._getThumbLeft(this._getCurrentValue());
-      this._fireChangeEvent('onSlidingStart');
+    this.setState({firstTouchOnThumb: this._thumbHitTest(e), firstTouchX: e.nativeEvent.locationX})
+    this._previousLeft = this._getThumbLeft(this._getCurrentValue());
+    this._fireChangeEvent('onSlidingStart');
   },
   _handlePanResponderMove: function(e: Object, gestureState: Object) {
     if (this.props.disabled) {
@@ -335,9 +336,9 @@ var Slider = React.createClass({
     if(this.state.firstTouchOnThumb){
       this._setCurrentValue(this._getValue(gestureState));   
     }   
-    else if(!this.state.firstTouchOnThum && !this.state.changed) {
+    else if(!this.state.firstTouchOnThum && !this.state.changed) {      
+      this._setCurrentValue(this._getValue(gestureState, this.state.firstTouchX - (this.props.thumbTouchSize.width / 2)));
       this.setState({changed: true})
-      this._setCurrentValue(this._getValue(gestureState, e.nativeEvent.locationX - (this.props.thumbTouchSize.width / 2)));
     }
 
     this._fireChangeEvent('onValueChange');
@@ -351,9 +352,11 @@ var Slider = React.createClass({
       return;
     }
 
-    this._setCurrentValue(this._getValue(gestureState));
+    if(this.state.firstTouchOnThumb && gestureState.dx != 0){
+      this._setCurrentValue(this._getValue(gestureState));
+    }
 
-    this.setState({firstTouchOnThumb: false, changed: false})
+    this.setState({firstTouchOnThumb: false, changed: false, firstTouchX: null})
 
     this._fireChangeEvent('onSlidingComplete');
   },

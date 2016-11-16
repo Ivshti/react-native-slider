@@ -10,8 +10,7 @@ import {
   StyleSheet,
   PanResponder,
   View,
-  Easing,
-  Platform
+  Easing
 } from "react-native";
 
 const shallowCompare = require('react-addons-shallow-compare'),
@@ -176,6 +175,7 @@ var Slider = React.createClass({
       thumbSize: {width: 0, height: 0},
       allMeasured: false,
       value: new Animated.Value(this.props.value),
+      firstTouchOnThumb: undefined
     };
   },
   getDefaultProps() {
@@ -190,10 +190,7 @@ var Slider = React.createClass({
       thumbTouchSize: {width: 40, height: 40},
       debugTouchArea: false,
       animationType: 'timing',
-      tapDirectChange: false,
-      firstTouchOnThumb: false,
-      changed: false,
-      firstTouchX: null
+      tapDirectChange: false
     };
   },
   componentWillMount() {
@@ -315,7 +312,9 @@ var Slider = React.createClass({
 
   _handleStartShouldSetPanResponder: function(e: Object, /*gestureState: Object*/): boolean {
     // Should we become active when the user presses down on the thumb?
-    return this.props.tapDirectChange ? true : this._thumbHitTest(e);
+    let isTouchOnThumb = this._thumbHitTest(e);
+    this.setState({firstTouchOnThumb: isTouchOnThumb});
+    return this.props.tapDirectChange ? true : isTouchOnThumb;
   },
 
   _handleMoveShouldSetPanResponder: function(/*e: Object, gestureState: Object*/): boolean {
@@ -324,32 +323,23 @@ var Slider = React.createClass({
   },
 
   _handlePanResponderGrant: function(e: Object, gestureState: Object) {
-    let isTouchOnThumb = this._thumbHitTest(e);
-    let fitstTouvhOnX = e.nativeEvent.locationX;  
-
-    if(!isTouchOnThumb && Platform.OS === 'ios' ){
-      this._setCurrentValue(this._getValue(gestureState, fitstTouvhOnX - (this.props.thumbTouchSize.width / 2)));
-      this._fireChangeEvent('onValueChange');
-    }
-
-    this.setState({firstTouchOnThumb: isTouchOnThumb, firstTouchX: fitstTouvhOnX})
     this._previousLeft = this._getThumbLeft(this._getCurrentValue());
     this._fireChangeEvent('onSlidingStart');
+
+    if(this.props.tapDirectChange && ! this.state.firstTouchOnThumb){
+      this._setCurrentValue(this._getValue(gestureState, e.nativeEvent.locationX - (this.props.thumbTouchSize.width / 2)));
+      this._fireChangeEvent('onValueChange');
+    }
   },
   _handlePanResponderMove: function(e: Object, gestureState: Object) {
     if (this.props.disabled) {
       return;
     }
-    
-    if(this.state.firstTouchOnThumb){
-      this._setCurrentValue(this._getValue(gestureState));   
-    }   
-    else if(!this.state.firstTouchOnThum && !this.state.changed) {      
-      this._setCurrentValue(this._getValue(gestureState, this.state.firstTouchX - (this.props.thumbTouchSize.width / 2)));
-      this.setState({changed: true})
-    }
 
-    this._fireChangeEvent('onValueChange');
+    if(!this.props.tapDirectChange || this.state.firstTouchOnThumb){
+        this._setCurrentValue(this._getValue(gestureState));
+        this._fireChangeEvent('onValueChange');
+    }
   },
   _handlePanResponderRequestEnd: function(e: Object, gestureState: Object) {
     // Should we allow another component to take over this pan?
@@ -360,11 +350,11 @@ var Slider = React.createClass({
       return;
     }
 
-    if(this.state.firstTouchOnThumb && gestureState.dx != 0){
-      this._setCurrentValue(this._getValue(gestureState));
+    if(this.state.firstTouchOnThumb){
+        this._setCurrentValue(this._getValue(gestureState));
     }
 
-    this.setState({firstTouchOnThumb: false, changed: false, firstTouchX: null})
+    this.setState({firstTouchOnThumb: undefined})
 
     this._fireChangeEvent('onSlidingComplete');
   },
@@ -413,7 +403,7 @@ var Slider = React.createClass({
 
   _getValue(gestureState: Object, offset: number) {
     var length = this.state.containerSize.width - this.state.thumbSize.width;
-    var thumbLeft = gestureState.dx != 0 || !offset ? this._previousLeft + gestureState.dx : offset;
+    var thumbLeft = offset ? offset : this._previousLeft + gestureState.dx;
 
     var ratio = thumbLeft / length;
 

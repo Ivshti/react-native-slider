@@ -10,7 +10,8 @@ import {
   StyleSheet,
   PanResponder,
   View,
-  Easing
+  Easing,
+  Platform
 } from "react-native";
 
 const shallowCompare = require('react-addons-shallow-compare'),
@@ -323,8 +324,15 @@ var Slider = React.createClass({
   },
 
   _handlePanResponderGrant: function(e: Object, gestureState: Object) {
+    let isTouchOnThumb = this._thumbHitTest(e);
+    let fitstTouvhOnX = e.nativeEvent.locationX;  
 
-    this.setState({firstTouchOnThumb: this._thumbHitTest(e), firstTouchX: e.nativeEvent.locationX})
+    if(!isTouchOnThumb && Platform.OS === 'ios' ){
+      this._setCurrentValue(this._getValue(gestureState, fitstTouvhOnX - (this.props.thumbTouchSize.width / 2)));
+      this._fireChangeEvent('onValueChange');
+    }
+
+    this.setState({firstTouchOnThumb: isTouchOnThumb, firstTouchX: fitstTouvhOnX})
     this._previousLeft = this._getThumbLeft(this._getCurrentValue());
     this._fireChangeEvent('onSlidingStart');
   },

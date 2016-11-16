@@ -1,6 +1,6 @@
 {
-  "name": "react-native-slider",
-  "version": "0.9.1",
+  "name": "react-native-slider-tappable",
+  "version": "0.10.0",
   "description": "A pure JavaScript <Slider /> component for react-native",
   "main": "lib/Slider.js",
   "files": [
@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:jeanregisser/react-native-slider.git"
+    "url": "git@github.com:Ivshti/react-native-slider-tappable.git"
   },
   "dependencies": {
     "react-addons-shallow-compare": "^15.0.2",
